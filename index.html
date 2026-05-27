@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus 3D | Calculator Cost Printare</title>
+    <meta name="description" content="Calculator profesional pentru costul printării 3D. Estimează materialele, energia și profitul.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Local Libraries -->
+    <script src="lib/lucide.min.js"></script>
+    <script src="lib/chart.js"></script>
+    <script src="lib/jszip.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Failsafe to hide any ghost overlays */
+        .global-drop-overlay, #global-drop-overlay, [class*="drop-overlay"] {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            z-index: -9999 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="nexus-bg-layer"></div>
+    
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i data-lucide="layers" class="logo-icon"></i>
+                <span class="logo-text">NEXUS <span class="highlight">3D</span></span>
+            </div>
+            <nav>
+                <div id="drop-zone" class="drop-zone">
+                    <i data-lucide="upload-cloud"></i>
+                    <span>Slicer Import (G-code)</span>
+                </div>
+                <button id="save-settings" class="btn btn-secondary">
+                    <i data-lucide="save"></i> Salvează Setările
+                </button>
+                <button id="export-pdf" class="btn btn-primary">
+                    <i data-lucide="download"></i> Exportă PDF
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <div class="price-display glass">
+                <h3>Preț Recomandat / Print</h3>
+                <div class="main-price">
+                    <span id="final-price">0.00</span> <span class="currency">RON</span>
+                </div>
+                <div class="sub-costs">
+                    <div class="sub-cost-item">
+                        <span class="label">Preț / Piesă:</span>
+                        <span id="label-price-per-piece" style="color: var(--primary); font-weight: bold;">0.00 RON</span>
+                    </div>
+                    <div class="sub-cost-item">
+                        <span class="label">Cost Material:</span>
+                        <span id="label-material-cost">0.00 RON</span>
+                    </div>
+                    <div class="sub-cost-item">
+                        <span class="label">Energie & Uzură:</span>
+                        <span id="label-energy-wear">0.00 RON</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-cards">
+                <div class="stat-card glass">
+                    <i data-lucide="database"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">Greutate Totală</span>
+                        <span class="stat-value" id="stat-weight">0g</span>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <i data-lucide="clock"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">Timp Total</span>
+                        <span class="stat-value" id="stat-time">0h 0m</span>
+                    </div>
+                </div>
+                <div class="stat-card glass file-card">
+                    <img id="model-thumbnail" src="" alt="Thumbnail" style="display: none; width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+                    <i data-lucide="file" id="file-icon"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">Fișier curent</span>
+                        <span class="stat-value" id="stat-file">Niciun fișier</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="calculator-grid">
+            <!-- Material Settings -->
+            <div class="input-card glass">
+                <div class="card-header">
+                    <i data-lucide="box"></i>
+                    <h2>Setări Material</h2>
+                </div>
+                <div class="input-group">
+                    <label for="material-price">Preț Filament / kg (RON)</label>
+                    <input type="number" id="material-price" value="100" step="0.5">
+                </div>
+                <div class="input-group">
+                    <label for="material-weight">Greutate Model (g)</label>
+                    <div class="range-container">
+                        <input type="number" id="material-weight" value="0" step="0.1" class="number-input">
+                        <input type="range" id="material-weight-slider" min="0" max="1000" value="0" class="slider">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="pieces-count">Număr Piese / Plate</label>
+                        <input type="number" id="pieces-count" value="1" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="material-type">Tip Material</label>
+                        <select id="material-type">
+                            <option value="pla">PLA</option>
+                            <option value="petg">PETG</option>
+                            <option value="abs">ABS</option>
+                            <option value="asa">ASA</option>
+                            <option value="tpu">TPU</option>
+                            <option value="nylon">Nylon</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Printer & Energy Settings -->
+            <div class="input-card glass">
+                <div class="card-header">
+                    <i data-lucide="zap"></i>
+                    <h2>Echipament & Energie</h2>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="print-hours">Ore Printare</label>
+                        <input type="number" id="print-hours" value="0" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="print-minutes">Minute</label>
+                        <input type="number" id="print-minutes" value="0" min="0" max="59">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="printer-power">Consum Imprimantă (W)</label>
+                    <input type="number" id="printer-power" value="150">
+                </div>
+                <div class="input-group">
+                    <label for="energy-price">Preț Energie / kWh (RON)</label>
+                    <input type="number" id="energy-price" value="0.80" step="0.01">
+                </div>
+            </div>
+
+            <!-- Labor & Business Settings -->
+            <div class="input-card glass">
+                <div class="card-header">
+                    <i data-lucide="trending-up"></i>
+                    <h2>Adaos & Manoperă</h2>
+                </div>
+                <div class="input-group">
+                    <label for="labor-rate">Preț Manoperă / oră (RON)</label>
+                    <input type="number" id="labor-rate" value="20">
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="prep-time">Timp Pregătire (min)</label>
+                        <input type="number" id="prep-time" value="15">
+                    </div>
+                    <div class="input-group">
+                        <label for="tva-rate">TVA (%)</label>
+                        <input type="number" id="tva-rate" value="19" min="0" max="100">
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="markup">Adaos Profit (%)</label>
+                        <input type="number" id="markup" value="50">
+                    </div>
+                    <div class="input-group">
+                        <label for="failure-rate">Rată Eșec (%)</label>
+                        <input type="number" id="failure-rate" value="10">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost Breakdown -->
+            <div class="input-card glass breakdown">
+                <div class="card-header">
+                    <i data-lucide="pie-chart"></i>
+                    <h2>Descompunere Costuri</h2>
+                </div>
+                <div class="breakdown-container">
+                    <div class="chart-wrapper">
+                        <canvas id="cost-chart"></canvas>
+                        <div class="chart-center">
+                            <span id="chart-total">0.00</span>
+                            <span class="currency">RON</span>
+                        </div>
+                    </div>
+                    <ul class="breakdown-list">
+                        <li>
+                            <span class="dot" style="background: var(--primary)"></span>
+                            <span>Cost Material</span>
+                            <span id="breakdown-material">0.00 RON</span>
+                        </li>
+                        <li>
+                            <span class="dot" style="background: var(--secondary)"></span>
+                            <span>Cost Energie & Uzură</span>
+                            <span id="breakdown-energy-total">0.00 RON</span>
+                        </li>
+                        <li>
+                            <span class="dot" style="background: var(--accent)"></span>
+                            <span>Manoperă</span>
+                            <span id="breakdown-labor">0.00 RON</span>
+                        </li>
+                        <li>
+                            <span class="dot" style="background: #ffffff33"></span>
+                            <span>Profit & Rezervă</span>
+                            <span id="breakdown-profit-total">0.00 RON</span>
+                        </li>
+                        <hr style="border: 0; border-top: 1px solid #ffffff1a; margin: 10px 0;">
+                        <li>
+                            <span style="color: var(--text-dim)">Subtotal (Net)</span>
+                            <span id="breakdown-subtotal" style="font-weight: 600">0.00 RON</span>
+                        </li>
+                        <li>
+                            <span style="color: var(--text-dim)">Valoare TVA</span>
+                            <span id="breakdown-tva" style="color: var(--primary)">0.00 RON</span>
+                        </li>
+                        <li class="total-row" style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed #ffffff33">
+                            <span style="font-weight: 700; color: #fff">TOTAL (Brut)</span>
+                            <span id="breakdown-grand-total" style="font-weight: 800; color: var(--primary); font-size: 1.1em;">0.00 RON</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js?v=6"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

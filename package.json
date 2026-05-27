@@ -1,0 +1,21 @@
+{
+  "name": "nexus-3d-calculator",
+  "version": "1.0.0",
+  "description": "Calculator profesional pentru costuri de printare 3D",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-packager . 'Nexus 3D' --platform=darwin --arch=x64 --icon=nexus3d_icon.icns --overwrite"
+  },
+  "keywords": [
+    "3dprinting",
+    "calculator",
+    "electron"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^41.2.0",
+    "electron-packager": "^17.1.2"
+  }
+}

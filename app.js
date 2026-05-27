@@ -44,7 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const piecesCountInput = document.getElementById('pieces-count');
 
     // DOM Elements - Outputs
+    const mainPriceTitle = document.getElementById('main-price-title');
     const finalPriceDisplay = document.getElementById('final-price');
+    const labelPricePerPieceTitle = document.getElementById('label-price-per-piece-title');
     const labelPricePerPiece = document.getElementById('label-price-per-piece');
     const labelMaterialCost = document.getElementById('label-material-cost');
     const labelEnergyWear = document.getElementById('label-energy-wear');
@@ -186,8 +188,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const grossTotal = netTotal + tvaValue;
 
         // Update UI
-        finalPriceDisplay.textContent = grossTotal.toFixed(2); // Afișăm mare prețul CU TVA
-        labelPricePerPiece.textContent = `${(grossTotal / pieces).toFixed(2)} RON`;
+        const pricePerPiece = grossTotal / pieces;
+        
+        if (pieces > 1) {
+            mainPriceTitle.textContent = 'Preț Recomandat / Piesă';
+            finalPriceDisplay.textContent = pricePerPiece.toFixed(2);
+            labelPricePerPieceTitle.textContent = 'Total Plate:';
+            labelPricePerPiece.textContent = `${grossTotal.toFixed(2)} RON`;
+        } else {
+            mainPriceTitle.textContent = 'Preț Recomandat / Print';
+            finalPriceDisplay.textContent = grossTotal.toFixed(2);
+            labelPricePerPieceTitle.textContent = 'Preț / Piesă:';
+            labelPricePerPiece.textContent = `${pricePerPiece.toFixed(2)} RON`;
+        }
+        
         labelMaterialCost.textContent = `${matCost.toFixed(2)} RON`;
         labelEnergyWear.textContent = `${totalEnergyWear.toFixed(2)} RON`;
         chartTotal.textContent = grossTotal.toFixed(2);
